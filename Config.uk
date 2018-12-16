@@ -1,0 +1,15 @@
+### Invisible option for dependencies
+config APPHTTPREPLY_DEPENDENCIES
+	bool
+	default y
+	select LIBNOLIBC if !HAVE_LIBC
+	select LIBLWIP
+	select LWIP_UKNETDEV
+	select LWIP_TCP
+	select LWIP_THREADS
+	select LWIP_SOCKET
+	select LWIP_AUTOIFACE
+	select LWIP_IPV4
+	select LWIP_DHCP
+	select LIBUKSCHED
+	select LIBUKSCHEDCOOP
