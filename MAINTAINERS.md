@@ -6,5 +6,6 @@ the main Unikraft repository.
 
 	HTTPREPLY-UNIKRAFT
 	M:	Simon Kuenzer <simon.kuenzer@neclab.eu>
+	M:	Alexander Jung <a.jung@lancs.ac.uk>
 	L:	minios-devel@lists.xen.org
 	F: *

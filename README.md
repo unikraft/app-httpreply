@@ -1,5 +1,10 @@
-"HTTPReply"-Example for Unikraft
-================================
+# HTTP reply on Unikraft
 
-Please refer to the `README.md` as well as the documentation in the `doc/`
-subdirectory of the main unikraft repository.
+To build and run this application please use the `kraft` script:
+
+    pip3 install git+https://github.com/unikraft/kraft.git
+    mkdir my-first-unikernel && cd my-first-unikernel
+    kraft up -p PLATFORM -m ARCHITECTURE httpreply
+
+For more information about `kraft` type ```kraft -h``` or read the
+[documentation](http://docs.unikraft.org).

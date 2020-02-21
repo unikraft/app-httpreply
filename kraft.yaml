@@ -1,0 +1,33 @@
+specification: '0.4'
+
+unikraft:
+  version: '0.4'
+  kconfig:
+    - CONFIG_LIBNOLIBC=y
+    - CONFIG_LIBUKSCHED=y
+    - CONFIG_LIBUKSCHEDCOOP=y
+
+architectures:
+  x86_64: true
+
+platforms:
+  kvm: true
+
+run:
+  networks:
+    net0:
+      pre_up: kraft-net --with-dnsmasq up
+      post_down: kraft-net --with-dnsmasq down
+
+libraries:
+  lwip:
+    version: '0.4'
+    kconfig:
+      - CONFIG_LWIP_UKNETDEV=y
+      - CONFIG_LWIP_TCP=y
+      - CONFIG_LWIP_THREADS=y
+      - CONFIG_LWIP_SOCKET=y
+      - CONFIG_LWIP_AUTOIFACE=y
+      - CONFIG_LWIP_IPV4=y
+      - CONFIG_LWIP_DHCP=y
+      - CONFIG_LWIP_SOCKET_PPOLL=n
