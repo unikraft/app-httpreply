@@ -1,24 +1,14 @@
-specification: '0.4'
-
+specification: '0.5'
+name: httpreply
 unikraft:
   version: '0.5'
   kconfig:
     - CONFIG_LIBNOLIBC=y
     - CONFIG_LIBUKSCHED=y
     - CONFIG_LIBUKSCHEDCOOP=y
-
-architectures:
-  x86_64: true
-
-platforms:
-  kvm: true
-
-run:
-  networks:
-    net0:
-      pre_up: kraft-net --with-dnsmasq up
-      post_down: kraft-net --with-dnsmasq down
-
+targets:
+  - architecture: x86_64
+    platform: kvm
 libraries:
   lwip:
     version: '0.5'
