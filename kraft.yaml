@@ -1,7 +1,8 @@
+---
 specification: '0.5'
 name: httpreply
 unikraft:
-  version: '0.5'
+  version: stable
   kconfig:
     - CONFIG_LIBNOLIBC=y
     - CONFIG_LIBUKSCHED=y
@@ -11,7 +12,7 @@ targets:
     platform: kvm
 libraries:
   lwip:
-    version: '0.5'
+    version: stable
     kconfig:
       - CONFIG_LWIP_UKNETDEV=y
       - CONFIG_LWIP_TCP=y
