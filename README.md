@@ -59,6 +59,24 @@ HTTP request sent, awaiting response... 200 OK
 2021-08-18 16:47:38 (41.5 MB/s) - ‘index.html’ saved [160]
 ```
 
+You can also the application manually:
+```
+$ sudo qemu-system-x86_64 \
+         -netdev bridge,id=en0,br=virbr0 \
+         -device virtio-net-pci,netdev=en0 \
+         -kernel "build/app-httpreply_kvm-x86_64" \
+         -append "netdev.ipv4_addr=172.44.0.2 netdev.ipv4_gw_addr=172.44.0.1 netdev.ipv4_subnet_mask=255.255.255.0 --" \
+         -cpu host \
+         -enable-kvm \
+         -nographic
+[...]
+1: Set IPv4 address 172.44.0.2 mask 255.255.255.0 gw 172.44.0.1
+en1: Added
+en1: Interface is up
+[...]
+Listening on port 8123...
+```
+
 Cleaning up means closing the virtual machine (and the HTTP server) and disabling and deleting the `virbr0` bridge interface:
 ```
 $ sudo ip l set dev virbr0 down
