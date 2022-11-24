@@ -97,7 +97,7 @@ int main(int argc __attribute__((unused)),
 		read(client, recvbuf, BUFLEN);
 
 		/* Send reply */
-		n = write(client, reply, sizeof(reply));
+		n = write(client, reply, sizeof(reply) - 1);
 		if (n < 0)
 			fprintf(stderr, "Failed to send a reply\n");
 		else
