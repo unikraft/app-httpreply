@@ -9,9 +9,9 @@ unikraft:
     - CONFIG_LIBUKSCHEDCOOP=y
 targets:
   - architecture: x86_64
-    platform: kvm
+    platform: qemu
   - architecture: arm64
-    platform: kvm
+    platform: qemu
 libraries:
   lwip:
     version: stable
