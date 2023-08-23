@@ -1,0 +1,26 @@
+specification: '0.5'
+name: httpreply
+unikraft:
+  version: cloud
+  kconfig:
+    - CONFIG_LIBNOLIBC=y
+    - CONFIG_LIBUKSCHED=y
+    - CONFIG_LIBUKSCHEDCOOP=y
+targets:
+  - name: kraftcloud-x86_64
+    architecture: x86_64
+    platform: firecracker
+libraries:
+  lwip:
+    version: stable
+    kconfig:
+      - CONFIG_LWIP_UKNETDEV=y
+      - CONFIG_LWIP_TCP=y
+      - CONFIG_LWIP_THREADS=y
+      - CONFIG_LWIP_SOCKET=y
+      - CONFIG_LWIP_AUTOIFACE=y
+      - CONFIG_LWIP_IPV4=y
+      - CONFIG_LWIP_SOCKET_PPOLL=n
+  ukp-bin:
+    source: https://github.com/unikraft-io/lib-ukp-bin
+    version: stable
