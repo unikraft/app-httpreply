@@ -12,6 +12,10 @@ targets:
     platform: qemu
   - architecture: arm64
     platform: qemu
+  - architecture: x86_64
+    platform: fc
+  - architecture: arm64
+    platform: fc
 libraries:
   lwip:
     version: stable
