@@ -1,0 +1,3 @@
+runs:
+  - memory: 64
+    networking: True
