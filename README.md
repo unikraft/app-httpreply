@@ -13,12 +13,12 @@ For building and running everything for `x86_64`, follow the steps below:
 ```console
 git clone https://github.com/unikraft/app-httpreply httpreply
 cd httpreply/
-mkdir .unikraft
-git clone https://github.com/unikraft/unikraft .unikraft/unikraft
-git clone https://github.com/unikraft/lib-lwip .unikraft/libs/lwip
-UK_DEFCONFIG=$(pwd)/.config.httpreply_qemu-x86_64 make defconfig
-make -j $(nproc)
-./run-qemu-x86_64.sh
+./scripts/setup.sh
+wget https://raw.githubusercontent.com/unikraft/app-testing/staging/scripts/generate.py -O scripts/generate.py
+chmod a+x scripts/generate.py
+./scripts/generate.py
+./scripts/build/make-qemu-x86_64.sh
+./scripts/run/qemu-x86_64.sh
 ```
 
 This will configure, build and run the `httpreply` application.
@@ -27,10 +27,14 @@ You can see how to test it in the [running section](#run).
 The same can be done for `AArch64`, by running the commands below:
 
 ```console
-make properclean
-UK_DEFCONFIG=$(pwd)/.config.httpreply_qemu-arm64 make defconfig
-make -j $(nproc)
-./run-qemu-aarch64.sh
+git clone https://github.com/unikraft/app-httpreply httpreply
+cd httpreply/
+./scripts/setup.sh
+wget https://raw.githubusercontent.com/unikraft/app-testing/staging/scripts/generate.py -O scripts/generate.py
+chmod a+x scripts/generate.py
+./scripts/generate.py
+./scripts/build/make-qemu-arm64.sh
+./scripts/run/qemu-arm64.sh
 ```
 
 Similar to the `x86_64` build, this will start the `httpreply` server.
@@ -112,56 +116,25 @@ Follow the steps below for the setup:
      This will print the contents of the repository:
 
      ```text
-     .config.httpreply_qemu-arm64  .config.httpreply_qemu-x86_64  fs0/  kraft.yaml  Makefile  Makefile.uk  README.md
+     [...] README.md  defconfigs/  kraft.cloud.yaml  kraft.yaml  main.c  scripts/
      ```
 
-  1. While inside the `httpreply/` directory, create the `.unikraft/` directory:
+  1. While inside the `httpreply/` directory, clone all required repositories by using the `setup.sh` script:
 
      ```console
-     mkdir .unikraft
+     ./scripts/setup.sh
      ```
 
-     Enter the `.unikraft/` directory:
+  1. Use the `tree` command to inspect the contents of the `workdir/` directory:
 
      ```console
-     cd .unikraft/
+     tree -F -L 2 workdir/
      ```
 
-  1. While inside the `.unikraft` directory, clone the [`unikraft` repository](https://github.com/unikraft/unikraft):
-
-     ```console
-     git clone https://github.com/unikraft/unikraft unikraft
-     ```
-
-  1. While inside the `.unikraft/` directory, create the `libs/` directory:
-
-     ```console
-     mkdir libs
-     ```
-
-  1. While inside the `.unikraft/` directory, clone the library repositories in the `libs/` directory:
-
-     ```console
-     git clone https://github.com/unikraft/lib-lwip libs/lwip
-     ```
-
-  1. Get back to the application directory:
-
-     ```console
-     cd ../
-     ```
-
-     Use the `tree` command to inspect the contents of the `.unikraft/` directory.
-     It should print something like this:
-
-     ```console
-     tree -F -L 2 .unikraft/
-     ```
-
-     The layout of the `.unikraft/` directory should look something like this:
+     The layout of the `workdir/` directory should look something like this:
 
      ```text
-     .unikraft/
+     workdir/
      |-- libs/
      |   `-- lwip/
      `-- unikraft/
@@ -181,7 +154,74 @@ Follow the steps below for the setup:
      10 directories, 7 files
      ```
 
-## Configure
+## Scripted Building and Running
+
+To make it easier to build, run and test different configurations, the repository provides a set of scripts that do everything required.
+These are scripts used for building different configurations of the httpreply server and for running these with all the requirements behind the scenes: creating network configurations, setting up archives etc.
+
+First of all, grab the [`generate.py` script](https://github.com/unikraft/app-testing/blob/staging/scripts/generate.py) and place it in the `scripts/` directory by running:
+
+```console
+wget https://raw.githubusercontent.com/unikraft/app-testing/staging/scripts/generate.py -O scripts/generate.py
+chmod a+x scripts/generate.py
+```
+
+Now, run the `generate.py` script.
+You must run it from the root directory of this repository:
+
+```console
+./scripts/generate.py
+```
+
+The scripts (as shell scripts) are now generated in `scripts/build/` and `scripts/run/`:
+
+```text
+scripts//
+|-- build/
+|   |-- kraft-fc-arm64.sh*
+|   |-- kraft-fc-x86_64.sh*
+|   |-- kraft-qemu-arm64.sh*
+|   |-- kraft-qemu-x86_64.sh*
+|   |-- make-fc-arm64.sh*
+|   |-- make-fc-x86_64.sh*
+|   |-- make-qemu-arm64.sh*
+|   `-- make-qemu-x86_64.sh*
+|-- generate.py*
+|-- run/
+|   |-- fc-arm64.json
+|   |-- fc-arm64.sh*
+|   |-- fc-x86_64.json
+|   |-- fc-x86_64.sh*
+|   |-- kraft-fc-arm64.sh*
+|   |-- kraft-fc-x86_64.sh*
+|   |-- kraft-qemu-arm64.sh*
+|   |-- kraft-qemu-x86_64.sh*
+|   |-- qemu-arm64.sh*
+|   `-- qemu-x86_64.sh*
+|-- run.yaml
+`-- setup.sh*
+```
+
+They are shell scripts, so you can use an editor or a text viewer to check their contents:
+
+```console
+cat scripts/run/fc-x86_64.sh
+```
+
+Now, invoke each script to build and run the application.
+A sample build and run set of commands is:
+
+```console
+./scripts/build/make-qemu-x86_64.sh
+./scripts/run/qemu-x86_64.sh
+```
+
+Note that Firecracker only works with initrd (not 9pfs).
+And Firecracker networking is not yet upstream.
+
+## Detailed Steps
+
+### Configure
 
 Configuring, building and running a Unikraft application depends on our choice of platform and architecture.
 Currently, supported platforms are QEMU (KVM), Xen and linuxu.
@@ -189,13 +229,14 @@ QEMU (KVM) is known to be working, so we focus on that.
 
 Supported architectures are x86_64 and AArch64.
 
-Use the corresponding the configuration files (`config-...`), according to your choice of platform and architecture.
+Use the corresponding the configuration files (`defconfigs/*`), according to your choice of platform and architecture.
 
 ### QEMU x86_64
 
-Use the `.config.httpreply_qemu-x86_64` configuration file together with `make defconfig` to create the configuration file:
+Use the `defconfigs/qemu-x86_64` configuration file together with `make defconfig` to create the configuration file:
 
 ```console
+UK_DEFCONFIG=$(pwd)/defconfigs/qemu-x86_64 make defconfig
 ```
 
 This results in the creation of the `.config` file:
@@ -209,10 +250,10 @@ The `.config` file will be used in the build step.
 
 ### QEMU AArch64
 
-Use the `.config.httpreply_qemu-arm64` configuration file together with `make defconfig` to create the configuration file:
+Use the `defconfigs/qemu-arm64` configuration file together with `make defconfig` to create the configuration file:
 
 ```console
-UK_DEFCONFIG=$(pwd)/.config.httpreply_qemu-arm64 make defconfig
+UK_DEFCONFIG=$(pwd)/defconfigs/qemu-arm64 make defconfig
 ```
 
 Similar to the x86_64 configuration, this results in the creation of the `.config` file that will be used in the build step.
@@ -252,7 +293,7 @@ This will print a list of files that are generated by the build system.
   UKBI    httpreply_qemu-x86_64.dbg.bootinfo
   SCSTRIP httpreply_qemu-x86_64
   GZ      httpreply_qemu-x86_64.gz
-make[1]: Leaving directory '/media/stefan/projects/unikraft/usoc23/test-01/httpreply/.unikraft/unikraft'
+make[1]: Leaving directory 'httpreply/workdir/unikraft'
 ```
 
 At the end of the build command, the `httpreply-x86_64` unikernel image is generated.
@@ -283,7 +324,7 @@ This will print a list of files that are generated by the build system.
   UKBI    httpreply_qemu-arm64.dbg.bootinfo
   SCSTRIP httpreply_qemu-arm64
   GZ      httpreply_qemu-arm64.gz
-make[1]: Leaving directory '/media/stefan/projects/unikraft/usoc23/test-01/httpreply/.unikraft/unikraft'
+make[1]: Leaving directory 'httpreply/workdir/unikraft'
 ```
 
 Similarly to x86_64, at the end of the build command, the `httpreply-arm64` unikernel image is generated.
@@ -300,7 +341,17 @@ All this is part of the `./run-qemu-*.sh` scripts.
 To run the QEMU x86_64 build, use `./run-qemu-x86_64.sh`:
 
 ```console
-./run-qemu-x86_64.sh
+sudo ip link set dev tap0 down 2> /dev/null
+sudo ip link del dev tap0 2> /dev/null
+sudo ip link set dev virbr0 down 2> /dev/null
+sudo ip link del dev virbr0 2> /dev/null
+sudo qemu-system-x86_64 \
+    -kernel workdir/build/httpreply_qemu-x86_64 \
+    -nographic \
+    -m 64M \
+    -netdev bridge,id=en0,br=virbr0 -device virtio-net-pci,netdev=en0 \
+    -append "netdev.ipv4_addr=172.44.0.2 netdev.ipv4_gw_addr=172.44.0.1 netdev.ipv4_subnet_mask=255.255.\
+    -cpu max
 ```
 
 This will start the `httpreply` application:
@@ -350,7 +401,18 @@ that is press the `Ctrl` and `a` keys at the same time and then, separately, pre
 To run the AArch64 build, use `./run-qemu-aarch64.sh`:
 
 ```console
-./run-qemu-aarch64.sh
+sudo ip link set dev tap0 down 2> /dev/null
+sudo ip link del dev tap0 2> /dev/null
+sudo ip link set dev virbr0 down 2> /dev/null
+sudo ip link del dev virbr0 2> /dev/null
+sudo qemu-system-aarch64 \
+    -machine virt \
+    -kernel workdir/build/httpreply_qemu-x86_64 \
+    -nographic \
+    -m 64M \
+    -netdev bridge,id=en0,br=virbr0 -device virtio-net-pci,netdev=en0 \
+    -append "netdev.ipv4_addr=172.44.0.2 netdev.ipv4_gw_addr=172.44.0.1 netdev.ipv4_subnet_mask=255.255.\
+    -cpu max
 ```
 
 Similar to running for x86_64, this will start the `httpreply` application:
