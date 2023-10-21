@@ -3,7 +3,53 @@
 This application starts an Httpreply web server with Unikraft.
 Follow the instructions below to set up, configure, build and run Httpreply.
 
-## Quick Setup (aka TLDR)
+To get started immediately, you can use Unikraft's companion command-line companion tool, [`kraft`](https://github.com/unikraft/kraftkit).
+Start by running the interactive installer:
+
+```console
+curl --proto '=https' --tlsv1.2 -sSf https://get.kraftkit.sh | sudo sh
+```
+
+Once installed, clone [this repository](https://github.com/unikraft/app-httpreply) and run `kraft build`:
+
+```console
+git clone https://github.com/unikraft/app-httpreply httpreply
+cd httpreply/
+kraft build
+```
+
+This will guide you through an interactive build process where you can select one of the available targets (architecture/platform combinations).
+Otherwise, we recommend building for `qemu/x86_64` like so:
+
+```console
+kraft build --plat qemu --arch x86_64
+```
+
+Once built, you can instantiate the unikernel via:
+
+```console
+kraft run --plat qemu --arch x86_64 -p 8123:8123
+```
+
+If you don't have KVM support (such as when running inside a virtual machine), pass the `-W` option to `kraft run` to disable virtualization support:
+
+```console
+kraft run -W --plat qemu --arch x86_64 -p 8123:8123
+```
+
+When left without the `--plat` / `--arch` argument, you'll be queried for the desired target from the list.
+
+To use the Unikraft instance of Httpreply, open another console and use the `wget` command below to query the server:
+
+```console
+curl localhost:8123
+```
+
+## Work with the Basic Build & Run Toolchain (Advanced)
+
+You can set up, configure, build and run the application from grounds up, without using the companion tool `kraft`.
+
+### Quick Setup (aka TLDR)
 
 For a quick setup, run the commands below.
 Note that you still need to install the [requirements](#requirements).
@@ -24,6 +70,9 @@ chmod a+x scripts/generate.py
 This will configure, build and run the `httpreply` application.
 You can see how to test it in the [running section](#run).
 
+To close the QEMU `httpreply` server, use the `Ctrl+a x` keyboard shortcut;
+that is press the `Ctrl` and `a` keys at the same time and then, separately, press the `x` key.
+
 The same can be done for `AArch64`, by running the commands below:
 
 ```console
@@ -40,7 +89,7 @@ chmod a+x scripts/generate.py
 Similar to the `x86_64` build, this will start the `httpreply` server.
 Information about every step is detailed below.
 
-## Requirements
+### Requirements
 
 In order to set up, configure, build and run Httpreply on Unikraft, the following packages are required:
 
@@ -216,8 +265,8 @@ A sample build and run set of commands is:
 ./scripts/run/qemu-x86_64.sh
 ```
 
-Note that Firecracker only works with initrd (not 9pfs).
-And Firecracker networking is not yet upstream.
+Note that Firecracker requires KVM (i.e. hardware virtualization) support.
+If you are using a virtual machine, you won't be able to run with Firecracker, only with QEMU in emulated mode.
 
 ## Detailed Steps
 
@@ -258,12 +307,12 @@ UK_DEFCONFIG=$(pwd)/defconfigs/qemu-arm64 make defconfig
 
 Similar to the x86_64 configuration, this results in the creation of the `.config` file that will be used in the build step.
 
-## Build
+### Build
 
 Building uses as input the `.config` file from above, and results in a unikernel image as output.
 The unikernel output image, together with intermediary build files, are stored in the `build/` directory.
 
-### Clean Up
+#### Clean Up
 
 Before starting a build on a different platform or architecture, you must clean up the build output.
 This may also be required in case of a new configuration.
@@ -276,7 +325,7 @@ Cleaning up is done with 3 possible commands:
 
 Typically, you would use `make properclean` to remove all build artifacts, but keep the configuration file.
 
-### QEMU x86_64
+#### QEMU x86_64
 
 Building for QEMU x86_64 assumes you did the QEMU x86_64 configuration step above.
 Build the Unikraft Httpreply image for QEMU x86_64 by using the command below:
@@ -299,7 +348,7 @@ make[1]: Leaving directory 'httpreply/workdir/unikraft'
 At the end of the build command, the `httpreply-x86_64` unikernel image is generated.
 This image is to be used in the run step.
 
-### QEMU AArch64
+#### QEMU AArch64
 
 If you had configured and build a unikernel image for another platform or architecture (such as x86_64) before, then:
 
@@ -330,31 +379,18 @@ make[1]: Leaving directory 'httpreply/workdir/unikraft'
 Similarly to x86_64, at the end of the build command, the `httpreply-arm64` unikernel image is generated.
 This image is to be used in the run step.
 
-## Run
+### Run
 
-The resulting image can be run with the `qemu-system-*` commands.
-In order to run `httpreply` you need to first set up a network bridge.
-All this is part of the `./run-qemu-*.sh` scripts.
+#### QEMU x86_64
 
-### QEMU x86_64
-
-To run the QEMU x86_64 build, use `./run-qemu-x86_64.sh`:
+To run the QEMU x86_64 build, use `qemu-x86_64.sh`:
 
 ```console
-sudo ip link set dev tap0 down 2> /dev/null
-sudo ip link del dev tap0 2> /dev/null
-sudo ip link set dev virbr0 down 2> /dev/null
-sudo ip link del dev virbr0 2> /dev/null
-sudo qemu-system-x86_64 \
-    -kernel workdir/build/httpreply_qemu-x86_64 \
-    -nographic \
-    -m 64M \
-    -netdev bridge,id=en0,br=virbr0 -device virtio-net-pci,netdev=en0 \
-    -append "netdev.ipv4_addr=172.44.0.2 netdev.ipv4_gw_addr=172.44.0.1 netdev.ipv4_subnet_mask=255.255.\
-    -cpu max
+./scripts/generate.py
+./scripts/run/qemu-x86_64.sh
 ```
 
-This will start the `httpreply` application:
+This will start the `httpreply` server:
 
 ```text
 1: Set IPv4 address 172.44.0.2 mask 255.255.255.0 gw 172.44.0.1
@@ -371,51 +407,64 @@ Listening on port 8123...
 ```
 
 The server listens for connections on the `172.44.0.2` address advertised.
-A web client (such as `wget`) is required to query the server.
+A web client (such as `curl`) is required to query the server.
 
-Open another console and use the `wget` command below to query the server:
+Open another console and use the `curl` command:
 
 ```console
-wget 172.44.0.2:8123
+curl 172.44.0.2:8123
 ```
 
-This will download [the `html` response](https://github.com/unikraft/app-httpreply/blob/staging/main.c#L42-L50) that the application sends:
+This will show [the response](https://github.com/unikraft/app-httpreply/blob/staging/main.c#L42-L50) that the application sends:
 
 ```text
---2023-07-03 08:38:20--  http://172.44.0.2:8123/
-Connecting to 172.44.0.2:8123... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: unspecified [text/html]
-Saving to: ‘index.html’
-
-index.html              [ <=>                ]     159  --.-KB/s    in 0s
-
-2023-07-03 08:38:20 (10,9 MB/s) - ‘index.html’ saved [159]
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"><html><head><title>It works!</title></head><body><h1>It works!</h1><p><p>This is only a test.</p></body></html>
 ```
 
-To close the QEMU Httpreply server, use the `Ctrl+a x` keyboard shortcut;
+To close the QEMU Nginx server, use the `Ctrl+a x` keyboard shortcut;
 that is press the `Ctrl` and `a` keys at the same time and then, separately, press the `x` key.
 
-### QEMU AArch64
+#### QEMU AArch64
 
-To run the AArch64 build, use `./run-qemu-aarch64.sh`:
+To run the AArch64 build, use `qemu-arm64.sh`:
 
 ```console
-sudo ip link set dev tap0 down 2> /dev/null
-sudo ip link del dev tap0 2> /dev/null
-sudo ip link set dev virbr0 down 2> /dev/null
-sudo ip link del dev virbr0 2> /dev/null
-sudo qemu-system-aarch64 \
-    -machine virt \
-    -kernel workdir/build/httpreply_qemu-x86_64 \
-    -nographic \
-    -m 64M \
-    -netdev bridge,id=en0,br=virbr0 -device virtio-net-pci,netdev=en0 \
-    -append "netdev.ipv4_addr=172.44.0.2 netdev.ipv4_gw_addr=172.44.0.1 netdev.ipv4_subnet_mask=255.255.\
-    -cpu max
+./scripts/generate.py
+./scripts/run/qemu-arm64.sh
 ```
 
-Similar to running for x86_64, this will start the `httpreply` application:
+This will start the `httpreply` server, same as above.
+Follow the same steps as above to qeury / test / close the running instance of `httpreply` with Unikraft.
+
+### Building and Running with Firecracker
+
+[Firecracker](https://firecracker-microvm.github.io/) is a lightweight VMM (*virtual machine manager*) that can be used as more efficient alternative to QEMU.
+
+Configure and build commands are similar to a QEMU-based build.
+
+```console
+./scripts/build/make-fc-x86_64.sh
+```
+
+To use Firecraker, you need to download a [Firecracker release](https://github.com/firecracker-microvm/firecracker/releases).
+You can use the commands below to make the `firecracker-x86_64` executable from release v1.4.0 available globally in the command line:
+
+```console
+cd /tmp
+wget https://github.com/firecracker-microvm/firecracker/releases/download/v1.4.0/firecracker-v1.4.0-x86_64.tgz
+tar xzf firecracker-v1.4.0-x86_64.tgz 
+sudo cp release-v1.4.0-x86_64/firecracker-v1.4.0-x86_64 /usr/local/bin/firecracker-x86_64
+```
+
+To run a unikernel image, you need to configure a JSON file.
+This is the `scripts/run/fc-x86_64.json` file.
+This configuration file is uses as part of the run command:
+
+```console
+./scripts/run/fc-x86_64.sh
+```
+
+Same as running with QEMU, the application will start:
 
 ```text
 1: Set IPv4 address 172.44.0.2 mask 255.255.255.0 gw 172.44.0.1
@@ -431,24 +480,5 @@ oOo oOO| | | | |   (| | | (_) |  _) :_
 Listening on port 8123...
 ```
 
-Open another console and use the `wget` command, similar to the QEMU x86_64 run above:
-
-```console
-wget 172.44.0.2:8123
-```
-
-This will download [the `html` response](https://github.com/unikraft/app-httpreply/blob/staging/main.c#L42-L50) that the application sends:
-
-```text
---2023-07-03 08:38:20--  http://172.44.0.2:8123/
-Connecting to 172.44.0.2:8123... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: unspecified [text/html]
-Saving to: ‘index.html’
-
-index.html              [ <=>                ]     159  --.-KB/s    in 0s
-
-2023-07-03 08:38:20 (10,9 MB/s) - ‘index.html’ saved [159]
-```
-
-Similarly, to close the QEMU Httpreply server, use the `Ctrl+a x` keyboard shortcut.
+This will start the `httpreply` server, same as above.
+Follow the same steps as above to qeury / test / close the running instance of `httpreply` with Unikraft.
