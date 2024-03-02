@@ -1,3 +1,6 @@
+**This repository is no longer maintained.
+Please visit the [application catalog](https://github.com/unikraft/catalog/tree/main/examples/http-c).**
+
 # Httpreply on Unikraft
 
 This application starts an Httpreply web server with Unikraft.
